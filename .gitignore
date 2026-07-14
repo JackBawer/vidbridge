@@ -7,3 +7,5 @@ output.mkv
 test_output.mkv
 compile_commands.json
 samples/*
+rust/target/
+Cargo.lock
