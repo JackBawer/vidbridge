@@ -1,0 +1,9 @@
+build/
+*.o
+*.a
+*.so
+output.mp4
+output.mkv
+test_output.mkv
+compile_commands.json
+samples/*
