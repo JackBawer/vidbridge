@@ -1,16 +1,48 @@
-# Project description
+# vidbridge
 
-The project aims to build a video processing library that integrates FFmpeg
-with a C wrapper to provide encoding and decoding support for H.264 (AVC) and
-H.265 (HEVC) video codecs. The C layer will encapsulate the FFmpeg API and
-expose a stable C-compatible interface (`extern "C"`), hiding FFmpeg's
-complexity and C implementation details. This interface will then be accessed
-from Rust through Foreign Function Interface (FFI) bindings. On the Rust side,
-a safe and ergonomic wrapper will be implemented around the unsafe FFI calls,
-managing resource lifetimes and preventing memory safety issues. The library
-will be designed to work within Rust's asynchronous ecosystem, using Tokio to
-perform video processing without blocking asynchronous tasks, likely by
-executing the synchronous FFmpeg operations on dedicated blocking threads. The
-final result will be a Rust-friendly API capable of opening video files,
-decoding frames, encoding video in H.264 and H.265 formats, and safely managing
-communication between Rust and the underlying C/FFmpeg implementation.
+A video processing library that bridges FFmpeg's C API to a safe Rust
+interface. It decodes, encodes, and muxes video using FFmpeg under the hood,
+supporting H.264 and H.265, and reads from local files or RTSP streams. The
+C layer wraps FFmpeg; the Rust layer exposes a safe API on top of it via FFI,
+with both a synchronous and an async (Tokio) interface.
+
+## Requirements
+
+- FFmpeg development libraries (`libavformat`, `libavcodec`, `libavutil`)
+- CMake ≥ 3.16
+- A C compiler (GCC or Clang)
+- Rust (via [rustup](https://rustup.rs))
+- `clang`/`libclang` (needed by `bindgen`)
+
+## Setup
+
+Clone the repo:
+```sh
+git clone https://github.com/JackBawer/vidbridge.git
+cd vidbridge
+```
+
+Build the Rust crate (this also builds the C library via CMake automatically):
+```sh
+cd rust
+cargo build
+```
+
+## Running
+
+Run the test suite:
+```sh
+cargo test
+```
+
+Run a sample transcode using one of the example binaries:
+```sh
+cargo run --bin smoke2
+```
+
+To build and run the standalone C library and its test suite instead:
+```sh
+cmake -S . -B build
+cmake --build build
+./build/vidbridge_test samples/sample01.mp4 120 output.mp4
+```
