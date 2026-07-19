@@ -55,6 +55,12 @@ void muxer_free(VideoMuxer* muxer);
 int muxer_write_packet(VideoMuxer* muxer, uint8_t* data, int size, int64_t pts, 
         int64_t dts, AVRational encoder_time_base);
 
+// Common
+int vidbridge_averror_eagain(void);
+int vidbridge_averror_eof(void);
+
+AVRational encoder_get_time_base(VideoEncoder *enc);
+
 #ifdef __cplusplus
 }
 #endif

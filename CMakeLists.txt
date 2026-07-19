@@ -10,12 +10,12 @@ pkg_check_modules(AVCODEC REQUIRED IMPORTED_TARGET libavcodec)
 pkg_check_modules(AVUTIL REQUIRED IMPORTED_TARGET libavutil)
 
 add_library(vidbridge STATIC
-    src/common.c
     src/decoder.c
     src/demuxer.c
     src/encoder.c
     src/muxer.c
     src/frame_utils.c
+    src/common.c
 )
 
 target_include_directories(vidbridge PUBLIC
