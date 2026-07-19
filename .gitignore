@@ -6,9 +6,9 @@ output.mp4
 output.mkv
 test_output.mkv
 compile_commands.json
-samples/*
 rust/target/
 Cargo.lock
+
 # Ignore video formats
 *.mp4
 *.mov
@@ -18,5 +18,11 @@ Cargo.lock
 *.wmv
 *.webm
 *.m4v
+
 # Ignore zip files
 *.zip
+
+# Un-ignore sample test files
+!samples/
+!samples/*.mp4
+!samples/*.mkv
