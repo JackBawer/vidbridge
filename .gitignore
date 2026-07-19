@@ -9,3 +9,14 @@ compile_commands.json
 samples/*
 rust/target/
 Cargo.lock
+# Ignore video formats
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.flv
+*.wmv
+*.webm
+*.m4v
+# Ignore zip files
+*.zip
