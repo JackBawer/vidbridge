@@ -30,19 +30,13 @@ cargo build
 
 ## Running
 
-Run the test suite:
-```sh
-cargo test
-```
-
 Run a sample transcode using one of the example binaries:
 ```sh
 cargo run --bin smoke2
 ```
 
-To build and run the standalone C library and its test suite instead:
+To build and run the standalone C library:
 ```sh
 cmake -S . -B build
 cmake --build build
-./build/vidbridge_test samples/sample01.mp4 120 output.mp4
 ```
