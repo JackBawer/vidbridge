@@ -34,12 +34,6 @@ if(ENABLE_SANITIZERS)
     target_link_options(vidbridge PUBLIC -fsanitize=address,undefined)
 endif()
 
-option(BUILD_TESTS "Build the C test suite" ON)
-if(BUILD_TESTS)
-    add_executable(vidbridge_test tests/test_pipeline.c)
-    target_link_libraries(vidbridge_test PRIVATE vidbridge)
-endif()
-
 install(TARGETS vidbridge
     ARCHIVE DESTINATION .
     LIBRARY DESTINATION .

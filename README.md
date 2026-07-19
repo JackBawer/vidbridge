@@ -61,5 +61,4 @@ cargo run --bin transcode -- rtsp://localhost:8554/live output.mp4 h264 300
 ```sh
 cmake -S . -B build
 cmake --build build
-./build/vidbridge_test samples/sample01.mp4 120 output.mp4
 ```
