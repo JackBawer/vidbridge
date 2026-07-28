@@ -97,7 +97,7 @@ int muxer_write_packet(VideoMuxer* muxer, uint8_t* data, int size, int64_t pts,
         return -1;
     }
 
-    // We copy here rather than borrow, because av_interleaved_write _frame
+    // We copy here rather than borrow, because av_interleaved_write_frame
     // takes ownership semantics that don't match  the zero-copy contract
     // encoder_raceive_packet promises the caller (valid only until the next
     // receive_packet/free call) — safer to make this boundary an explicit copy
