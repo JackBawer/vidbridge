@@ -21,6 +21,22 @@ impl Decoder {
         if ret < 0 { Err(ret) } else { Ok(()) }
     }
 
+    /// Alternate init path for sources that don't go through a `Demuxer`
+    /// (e.g. an RTSP client like `retina`). `extradata` is the avcC/hvcC
+    /// parameter-set blob for the codec this decoder was created with.
+    /// Packets passed to `send_packet` must be in AVC (length-prefixed
+    /// NAL) format to match, not Annex-B.
+    pub fn init_from_extradata(&mut self, extradata: &[u8]) -> Result<(), i32> {
+        let ret = unsafe {
+            ffi::decoder_initialize_with_extradata(
+                self.ptr.as_ptr(),
+                extradata.as_ptr(),
+                extradata.len() as i32,
+            )
+        };
+        if ret < 0 { Err(ret) } else { Ok(()) }
+    }
+
     /// Send a packet for decoding. Pass None to flush at end-of-stream.
     pub fn send_packet(&mut self, data: Option<&[u8]>, pts: i64) -> Result<(), i32> {
         let ret = match data {

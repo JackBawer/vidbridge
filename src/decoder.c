@@ -2,7 +2,9 @@
 #include "video_wrapper.h"
 #include <libavcodec/avcodec.h>
 #include <libavcodec/codec.h>
+#include <libavutil/mem.h>
 #include <stdlib.h>
+#include <string.h>
 
 VideoDecoder* decoder_create(const char* codec_name) {
     const AVCodec* codec = avcodec_find_decoder_by_name(codec_name);
@@ -66,6 +68,31 @@ int decoder_initialize_from_demuxer(VideoDecoder* decoder,
     }
 
     ret = avcodec_open2(decoder->codec_ctx, decoder->codec, NULL);
+    if (ret < 0) {
+        return ret;
+    }
+    decoder->is_open = 1;
+    return 0;
+}
+
+int decoder_initialize_with_extradata(VideoDecoder* decoder,
+        const uint8_t* extradata, int extradata_size) {
+    if (!decoder || !decoder->codec_ctx || !extradata || extradata_size <= 0) {
+        return AVERROR(EINVAL);
+    }
+
+    // FFmpeg requires AV_INPUT_BUFFER_PADDING_SIZE extra zeroed bytes past
+    // the end of extradata, and takes ownership of the buffer once set.
+    uint8_t* buf = (uint8_t*)av_mallocz(extradata_size + AV_INPUT_BUFFER_PADDING_SIZE);
+    if (!buf) {
+        return AVERROR(ENOMEM);
+    }
+    memcpy(buf, extradata, extradata_size);
+
+    decoder->codec_ctx->extradata = buf;
+    decoder->codec_ctx->extradata_size = extradata_size;
+
+    int ret = avcodec_open2(decoder->codec_ctx, decoder->codec, NULL);
     if (ret < 0) {
         return ret;
     }

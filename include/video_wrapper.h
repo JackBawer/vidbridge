@@ -36,6 +36,13 @@ VideoDecoder* decoder_create(const char* codec_name);
 void decoder_free(VideoDecoder* decoder);
 int decoder_initialize_from_demuxer(VideoDecoder* decoder,
         VideoDemuxer* demuxer);
+// Alternate init path for sources that don't go through a VideoDemuxer
+// (e.g. a Rust RTSP client like retina). `extradata` should be the
+// avcC/hvcC-style parameter set blob for the codec `decoder` was created
+// with, and packets handed to decoder_send_packet must be in AVC
+// (length-prefixed NAL) format to match.
+int decoder_initialize_with_extradata(VideoDecoder* decoder,
+        const uint8_t* extradata, int extradata_size);
 int decoder_send_packet(VideoDecoder* decoder, const uint8_t* data, int size,
         int64_t pts);
 int decoder_receive_frame(VideoDecoder* decoder, RawFrame* frame);
