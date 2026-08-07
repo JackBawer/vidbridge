@@ -52,8 +52,26 @@ fn main() {
     let mut frame = Frame::new().unwrap();
     let (mut decoded, mut encoded) = (0, 0);
 
-    'capture: while let Some((packet, pts)) = demuxer.read_packet() {
-        decoder.send_packet(Some(&packet), pts).unwrap();
+    // Zero-copy path: read_packet_ref()/receive_packet_ref() borrow
+    // straight from the C buffer instead of allocating+copying into a
+    // Vec<u8> on every packet. This works because each borrowed slice is
+    // only used once, immediately, before the next &mut call on the same
+    // object — which is exactly the lifetime the borrow checker enforces
+    // here (see the comments on read_packet_ref/receive_packet_ref).
+    //
+    // encoder.time_base() is captured *before* the inner while-let below,
+    // not inside it: `pkt` from receive_packet_ref() holds a &mut borrow
+    // on `encoder` for the loop body, so calling encoder.time_base()
+    // (also &self) inside that body would conflict with it.
+    let time_base = encoder.time_base();
+
+    'capture: while let Some((packet, pts)) = demuxer.read_packet_ref() {
+        // `packet` is a borrow tied to `demuxer`; it's consumed here by
+        // send_packet (which copies it into FFmpeg's own AVPacket) and
+        // not touched again, so NLL ends the borrow at this line — the
+        // next loop iteration's read_packet_ref() call is free to borrow
+        // `demuxer` again.
+        decoder.send_packet(Some(packet), pts).unwrap();
 
         loop {
             if !decoder.receive_frame(&mut frame).unwrap() {
@@ -61,9 +79,9 @@ fn main() {
             }
             decoded += 1;
             encoder.send_frame(Some(&frame)).unwrap();
-            while let Some((pkt, pts, dts)) = encoder.receive_packet().unwrap() {
+            while let Some((pkt, pts, dts)) = encoder.receive_packet_ref().unwrap() {
                 encoded += 1;
-                muxer.write_packet(&pkt, pts, dts, encoder.time_base()).unwrap();
+                muxer.write_packet(pkt, pts, dts, time_base).unwrap();
             }
 
             if let Some(limit) = max_frames {
@@ -81,16 +99,16 @@ fn main() {
         }
         decoded += 1;
         encoder.send_frame(Some(&frame)).unwrap();
-        while let Some((pkt, pts, dts)) = encoder.receive_packet().unwrap() {
+        while let Some((pkt, pts, dts)) = encoder.receive_packet_ref().unwrap() {
             encoded += 1;
-            muxer.write_packet(&pkt, pts, dts, encoder.time_base()).unwrap();
+            muxer.write_packet(pkt, pts, dts, time_base).unwrap();
         }
     }
 
     encoder.send_frame(None).ok();
-    while let Some((pkt, pts, dts)) = encoder.receive_packet().unwrap() {
+    while let Some((pkt, pts, dts)) = encoder.receive_packet_ref().unwrap() {
         encoded += 1;
-        muxer.write_packet(&pkt, pts, dts, encoder.time_base()).unwrap();
+        muxer.write_packet(pkt, pts, dts, time_base).unwrap();
     }
 
     println!("decoded {decoded} frames, encoded {encoded} frames -> {output}");

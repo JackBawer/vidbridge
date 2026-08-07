@@ -42,6 +42,23 @@ impl Demuxer {
     /// buffer is only valid until the next call to this function, so we
     /// copy out immediately rather than exposing the raw borrowed pointer.
     pub fn read_packet(&mut self) -> Option<(Vec<u8>, i64)> {
+        let (bytes, pts) = self.read_packet_ref()?;
+        Some((bytes.to_vec(), pts))
+    }
+
+    /// Zero-copy variant of `read_packet`: borrows straight from the C
+    /// packet buffer instead of allocating a Vec. The returned slice is
+    /// only valid until the next call to any &mut method on this Demuxer
+    /// (the borrow checker enforces this via the lifetime on `&mut self`),
+    /// which mirrors the real constraint the underlying C buffer has —
+    /// FFmpeg reuses it on the next av_read_frame call.
+    ///
+    /// Use this when you're about to hand the bytes straight to
+    /// Decoder::send_packet in the same iteration and don't need to hold
+    /// onto them past that — e.g. the sync transcode.rs loop. Prefer
+    /// `read_packet` (owned) when the data needs to outlive this call,
+    /// e.g. crossing into a spawn_blocking closure like AsyncDemuxer does.
+    pub fn read_packet_ref(&mut self) -> Option<(&[u8], i64)> {
         let mut data: *mut u8 = std::ptr::null_mut();
         let mut size: i32 = 0;
         let mut pts: i64 = 0;
@@ -53,7 +70,7 @@ impl Demuxer {
             return None;
         }
 
-        let bytes = unsafe { std::slice::from_raw_parts(data, size as usize).to_vec() };
+        let bytes = unsafe { std::slice::from_raw_parts(data, size as usize) };
         Some((bytes, pts))
     }
 

@@ -41,6 +41,21 @@ impl Encoder {
 
     /// Copies out one encoded packet if ready. Returns None on EAGAIN/EOF.
     pub fn receive_packet(&mut self) -> Result<Option<(Vec<u8>, i64, i64)>, i32> {
+        match self.receive_packet_ref()? {
+            Some((bytes, pts, dts)) => Ok(Some((bytes.to_vec(), pts, dts))),
+            None => Ok(None),
+        }
+    }
+
+    /// Zero-copy variant of `receive_packet`: borrows straight from the
+    /// C-owned encoded packet buffer instead of allocating a Vec. Valid
+    /// only until the next call to any &mut method on this Encoder —
+    /// same constraint as the underlying AVPacket, which
+    /// encoder_receive_packet reuses (via av_packet_unref) on every call.
+    ///
+    /// Use this when handing the bytes straight to Muxer::write_packet
+    /// in the same loop iteration, as the sync transcode.rs path does.
+    pub fn receive_packet_ref(&mut self) -> Result<Option<(&[u8], i64, i64)>, i32> {
         let mut data: *mut u8 = std::ptr::null_mut();
         let mut size: i32 = 0;
         let mut pts: i64 = 0;
@@ -51,7 +66,7 @@ impl Encoder {
         };
 
         if ret == 0 {
-            let bytes = unsafe { std::slice::from_raw_parts(data, size as usize).to_vec() };
+            let bytes = unsafe { std::slice::from_raw_parts(data, size as usize) };
             Ok(Some((bytes, pts, dts)))
         } else if ret == unsafe { ffi::vidbridge_averror_eagain() } || ret == unsafe { ffi::vidbridge_averror_eof() } {
             Ok(None)
@@ -60,7 +75,7 @@ impl Encoder {
         } else {
             Ok(None)
         }
-}
+    }
 
     pub(crate) fn as_ptr(&self) -> *mut ffi::VideoEncoder {
         self.ptr.as_ptr()
