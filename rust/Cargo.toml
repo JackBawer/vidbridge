@@ -10,6 +10,8 @@ tokio = { version = "1", features = ["full"] }
 futures = "0.3"
 bytes = "1"
 url = "2"
+# sdl2 = { version = "0.37", features = ["bundled", "static-link"] }
+sdl3 = "0.18"
 
 [build-dependencies]
 cmake = "0.1"
